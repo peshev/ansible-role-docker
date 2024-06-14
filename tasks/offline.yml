@@ -1,0 +1,36 @@
+- shell:
+    cmd: "lsb_release -r -i | awk '{ print $NF }' | paste -sd: | tr '[:upper:]' '[:lower:]'"
+  register: release_version_result
+- copy:
+    src: download_docker_packages.sh
+    dest: "{{ docker_offline_download_dir }}/"
+    mode: 0755
+  delegate_to: localhost
+  register: download_docker_packages_copy_result
+- template:
+    src: Dockerfile.j2
+    dest: "{{ docker_offline_download_dir }}/Dockerfile"
+  delegate_to: localhost
+  register: dockerfile_template_result
+- file:
+    path: "{{ docker_offline_download_dir }}/packages/"
+    state: directory
+  delegate_to: localhost
+  register: packages_dir_result
+- command:
+    cmd: ./download_docker_packages.sh
+    chdir: "{{ docker_offline_download_dir }}"
+  delegate_to: localhost
+  when: download_docker_packages_copy_result is changed or dockerfile_template_result is changed or packages_dir_result is changed
+- copy:
+    src: "{{ docker_offline_download_dir }}/packages"
+    dest: "{{ docker_offline_dest_dir }}"
+- command:
+    cmd: "find {{ docker_offline_dest_dir }}/packages/deb -name *.deb"
+  register: deb_packages_result
+- apt:
+    deb: "{{ item }}"
+  loop: "{{ deb_packages_result.stdout_lines }}"
+- pip:
+    name: "{{ docker_pip_packages }} "
+    extra_args: "--user --no-index --find-links=file://{{ docker_offline_dest_dir }}/packages/pip"
