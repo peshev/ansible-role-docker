@@ -1,7 +1,7 @@
 docker_repository_version: stable
 docker_keyring_dir: /etc/apt/keyrings
 docker_keyring_file: "{{ docker_keyring_dir }}/docker.gpg"
-docker_repository_url: https://download.docker.com/linux/ubuntu
+docker_repository_url: "https://download.docker.com/linux/{{ansible_distribution | lower }}"
 docker_repository_key_url: "{{ docker_repository_url }}/gpg"
 docker_repository_source: "deb [arch={{ dpkg_architecture_result.stdout }} signed-by={{ docker_keyring_file }}] {{ docker_repository_url }} {{ ansible_distribution_release }} {{ docker_repository_version }}"
 docker_remove_packages:
